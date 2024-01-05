@@ -2,6 +2,27 @@ const db = require('../../database/models');
 const sequelize = db.sequelize 
 
 module.exports = {
+     list : (req,res)=>{
+        db.Movie.findAll()
+        .then(movies=>{
+            return res.json({
+                meta :[{
+                    status:200,
+                    total: movies.length,
+                    url : "api/movies/"
+                }],
+                data : movies
+            })
+        })
+      
+    },
+    detail:(req,res) =>{
+        let id = req.params.id;
+        db.Movie.findByPk(id)
+            .then(movie =>{
+                res.json(movie)
+            });
+    },
     create :(req,res) =>{
      
   
@@ -30,7 +51,7 @@ module.exports = {
     }else{
         response ={
             meta: {
-                status: 200,
+                status: 204,
                 total: confirm.length,
                 url:'api/movies/'
             },
@@ -40,6 +61,43 @@ module.exports = {
     res.json(response)
 })
 .catch(error => res.send(error))
+},
+update : async(req,res)=>{
+    try {
+        const {title,rating,awards,release_date,length} = req.body
+        const movie = await db.Movie.findByPk(req.params.id)
+
+        await db.Movie.update(
+            {
+                title : title,
+                rating,
+                awards : awards || 0,
+                release_date,
+                length
+            },
+            {
+                where :{
+                    id : req.params.id,
+                }
+               
+            }
+        )
+       await movie.reload();
+
+        return res.status(200).json({
+            ok:true,
+            msg : "pelicula actualizada con exito",
+            data: movie
+        })
+
+    } catch (error) {
+        return res.status(error.status || 500).json({
+            ok:false,
+            msg: error.message
+        })
+        
+    }      
+
 },
 destroy: (req,res)=>{
     let movieId = req.params.id;
